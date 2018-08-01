@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "omp.h"
+#include <mpi.h>
 #include <time.h>
 
 int totalSize;
@@ -20,9 +21,8 @@ int getY(int pos){
 int validMove(int* puzzle, int x, int y, int num){
 	int rowStart = (x/n*n) * n*n;
 	int colStart = (y/n*n) * n*n;
-	int i, j;
 
-	for(i=0; i<n*n; ++i){
+	for(int i=0; i<n*n; ++i){
 		if (puzzle[numRows*x + i] == num) return 0;
 		if (puzzle[numRows*i + y] == num) return 0;
 		if (puzzle[numRows*(rowStart + (i%n*n)) + (colStart + (i/n*n))] == num) return 0;
@@ -30,7 +30,6 @@ int validMove(int* puzzle, int x, int y, int num){
 	return 1;
 }
 
-//TODO put numbers 1->n in valid random locations
 int* genPuzzle(){
 	//set random seed
 	srand(time(NULL));
@@ -77,6 +76,11 @@ void printPuzzle(int* puzzle){
 
 int main(int argc, char* argv){
 
+	MPI_Init(NULL, NULL);
+        int rank, numranks;
+        MPI_Comm_size(MPI_COMM_WORLD, &numranks);
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
 	//size of inner squares n*n
 	n = 3;
 	//number of rows in puzzle
@@ -86,8 +90,27 @@ int main(int argc, char* argv){
 	//total number of elements in puzzle numRows*numCols
 	totalSize = n*n*n*n;
 
-	int* puzzle = (int*)malloc(totalSize*sizeof(int));
-	puzzle = genPuzzle();
+	if(rank == 0){
+		int* puzzle = (int*)malloc(totalSize*sizeof(int));
+		puzzle = genPuzzle();
+		//send Qn to rank n
 
-	printPuzzle(puzzle);
+		printPuzzle(puzzle);
+	}
+
+	//for 0 -> numranks
+		//recieve qn
+
+	//now start solving each qn
+
+	// for 0 -> n*n - 1
+		// for each rank: r
+			//rank r then places a number into first available spot
+				//rank r checks to see if number is in Qr
+				//rank r askes all ranks horizontal if they have that num in the selected row
+				//rank r askes all ranks vertical if they have that num in the selected column
+			//if valid move, go to next rank
+			//if invalid move pick another number
+
+	MPI_Finalize();
 }

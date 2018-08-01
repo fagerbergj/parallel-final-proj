@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -l nodes=3:ppn=12
+#PBS -l walltime=0:05:00
+#PBS -q batch
+#PBS -N r_final
+#PBS -j oe
+
+cd ~/assignments/final
+mpiexec -np 3 --map-by ppr:3:node --hostfile $PBS_NODEFILE ./sudoku_solver.cx
+exit 0
