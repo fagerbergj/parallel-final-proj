@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "omp.h"
 #include <mpi.h>
 #include <time.h>
 
@@ -40,7 +39,7 @@ int* genPuzzle(){
 	}
 
 	//n*n random spots
-	for(int i = 1; i <= n*n; i++){
+/*	for(int i = 1; i <= n*n; i++){
 		int randPos = rand() % totalSize;
 		int x = getX(randPos);
 		int y = getY(randPos);
@@ -51,7 +50,7 @@ int* genPuzzle(){
 			randPos = rand() % totalSize;
 		}
 		puzzle[randPos] = i;
-	}
+	}*/
 	return puzzle;
 }
 
@@ -81,7 +80,7 @@ int main(int argc, char* argv){
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	//size of inner squares n*n
-	n = 2;
+	n = 6;
 	//number of row/col in puzzle
 	dim = n*n;
 	//total number of elements in puzzle dim*dim

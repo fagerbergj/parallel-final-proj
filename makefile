@@ -1,7 +1,7 @@
 CC = mpicc
 LDC = mpicc
-LD_FLAGS = -std=c11 -fopenmp
-FLAGS = -std=c11 -fopenmp
+LD_FLAGS = -std=c11 -fopenmp -g -fsanitize=address
+FLAGS = -std=c11 -fopenmp -g -fsanitize=address
 RM= /bin/rm
 
 CPROGS = sudoku_solver.cx
