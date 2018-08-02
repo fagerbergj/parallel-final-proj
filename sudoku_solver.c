@@ -81,7 +81,7 @@ int main(int argc, char* argv){
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	//size of inner squares n*n
-	n = 2;
+	n = 3;
 	//number of row/col in puzzle
 	dim = n*n;
 	//total number of elements in puzzle dim*dim
@@ -119,8 +119,6 @@ int main(int argc, char* argv){
 
 	//each rank recieves their section
 	int* section = (int*)malloc(dim*sizeof(int));
-	MPI_Barrier(MPI_COMM_WORLD);
-
 	MPI_Recv(section, dim, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	for(int i = 0; i < numranks; i++){
