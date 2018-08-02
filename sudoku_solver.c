@@ -6,16 +6,15 @@
 #include <time.h>
 
 int totalSize;
-int numRows;
-int numCols;
+int dim;
 int n;
 
 int getX(int pos){
-	return pos/numRows;
+	return pos/dim;
 }
 
 int getY(int pos){
-	return pos%numRows;
+	return pos%dim;
 }
 
 int validMove(int* puzzle, int x, int y, int num){
@@ -23,9 +22,9 @@ int validMove(int* puzzle, int x, int y, int num){
 	int colStart = (y/n*n) * n*n;
 
 	for(int i=0; i<n*n; ++i){
-		if (puzzle[numRows*x + i] == num) return 0;
-		if (puzzle[numRows*i + y] == num) return 0;
-		if (puzzle[numRows*(rowStart + (i%n*n)) + (colStart + (i/n*n))] == num) return 0;
+		if (puzzle[dim*x + i] == num) return 0;
+		if (puzzle[dim*i + y] == num) return 0;
+		if (puzzle[dim*(rowStart + (i%n*n)) + (colStart + (i/n*n))] == num) return 0;
 	}
 	return 1;
 }
@@ -58,16 +57,16 @@ int* genPuzzle(){
 
 //completed: print matrix separating regions
 void printPuzzle(int* puzzle){
-	for(int i = 0; i < numRows; i++){
-		if(i%n == 0 && i !=0 && i != numRows-1) {
-			for(int u = 0; u < numCols*2+n*2; u++) printf("_");
+	for(int i = 0; i < dim; i++){
+		if(i%n == 0 && i !=0 && i != dim-1) {
+			for(int u = 0; u < dim*2+n*2; u++) printf("_");
 			printf("\n");
 		}
-		for(int j = 0; j < numCols; j++){
-			if(j%n == 0 && j !=0 && j!= numCols-1) {
+		for(int j = 0; j < dim; j++){
+			if(j%n == 0 && j !=0 && j!= dim-1) {
 				printf(" | ");
 			}
-			printf("%d ", puzzle[numRows*i + j]);
+			printf("%d ", puzzle[dim*i + j]);
 		}
 		printf("\n");
 	}
@@ -82,25 +81,59 @@ int main(int argc, char* argv){
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	//size of inner squares n*n
-	n = 3;
-	//number of rows in puzzle
-	numRows = n*n;
-	//number of colums in puzzle
-	numCols = n*n;
-	//total number of elements in puzzle numRows*numCols
-	totalSize = n*n*n*n;
+	n = 2;
+	//number of row/col in puzzle
+	dim = n*n;
+	//total number of elements in puzzle dim*dim
+	totalSize = dim*dim;
 
 	if(rank == 0){
 		int* puzzle = (int*)malloc(totalSize*sizeof(int));
 		puzzle = genPuzzle();
-		//send Qn to rank n
 
 		printPuzzle(puzzle);
+
+		//send section n to rank n
+		for(int r = 0; r < numranks; r++){
+			int* s = (int*)malloc(dim*sizeof(int));
+			for(int i = 0; i < n; i++){
+				for(int j = 0; j < n; j++){
+					//multipliers to map small cubes to full puzzle index
+					int xoff = (r/n)* n*n*n;
+					int yoff = (r%n)* n;
+					//puzzle pos = xoffset to current position + position in smaller section + yoffset to current position
+					int puzzlePos = xoff + (i*dim + j) + yoff;
+					s[n*i+j] = puzzle[puzzlePos];
+					//printf("%d ", s[n*i+j]);
+				}
+				//printf("\n");
+			}
+			//printf("\n");
+			//send section to rank x
+			MPI_Send(s, dim, MPI_INT, r, 0, MPI_COMM_WORLD);
+			//rank 0 no longer needs this section
+			free(s);
+		}
 	}
 
-	//for 0 -> numranks
-		//recieve qn
 
+	//each rank recieves their section
+	int* section = (int*)malloc(dim*sizeof(int));
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	MPI_Recv(section, dim, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+	for(int i = 0; i < numranks; i++){
+		if(rank == i){
+			printf("*****RANK: %d's SECTION*****\n", rank);
+			for(int i = 0; i < n; i++){
+				for(int j = 0; j < n; j++){
+					printf("%d ", section[i*n+j]);
+				}
+				printf("\n");
+			}
+		}
+	}
 	//now start solving each qn
 
 	// for 0 -> n*n - 1
