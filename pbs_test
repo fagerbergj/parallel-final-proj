@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -l nodes=6:ppn=12
+#PBS -l walltime=0:06:00
+#PBS -q batch
+#PBS -N r_final
+#PBS -j oe
+
+cd ~/assignments/final
+mpiexec -np 36 --map-by ppr:6:node --hostfile $PBS_NODEFILE ./a.out
+exit 0

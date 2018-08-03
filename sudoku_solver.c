@@ -104,11 +104,11 @@ int main(int argc, char* argv){
 					//puzzle pos = xoffset to current position + position in smaller section + yoffset to current position
 					int puzzlePos = xoff + (i*dim + j) + yoff;
 					s[n*i+j] = puzzle[puzzlePos];
-					//printf("%d ", s[n*i+j]);
+					printf("%d ", s[n*i+j]);
 				}
-				//printf("\n");
+				printf("\n");
 			}
-			//printf("\n");
+			printf("\n");
 			//send section to rank x
 			MPI_Send(s, dim, MPI_INT, r, 0, MPI_COMM_WORLD);
 			//rank 0 no longer needs this section
@@ -116,12 +116,12 @@ int main(int argc, char* argv){
 		}
 	}
 
-
 	//each rank recieves their section
 	int* section = (int*)malloc(dim*sizeof(int));
+
 	MPI_Recv(section, dim, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-	for(int i = 0; i < numranks; i++){
+/*	for(int i = 0; i < numranks; i++){
 		if(rank == i){
 			printf("*****RANK: %d's SECTION*****\n", rank);
 			for(int i = 0; i < n; i++){
@@ -131,7 +131,7 @@ int main(int argc, char* argv){
 				printf("\n");
 			}
 		}
-	}
+	}*/
 	//now start solving each qn
 
 	// for 0 -> n*n - 1
