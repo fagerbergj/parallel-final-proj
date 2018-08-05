@@ -17,16 +17,11 @@ int getY(int pos){
 	return pos%dim;
 }
 
-int validMove(int* puzzle, int x, int y, int num){
-	int rowStart = (x/n*n) * n*n;
-	int colStart = (y/n*n) * n*n;
-
-	for(int i=0; i<n*n; ++i){
-		if (puzzle[dim*x + i] == num) return 0;
-		if (puzzle[dim*i + y] == num) return 0;//?
-		//if (puzzle[dim*(rowStart + (i%n*n)) + (colStart + (i/n*n))] == num) return 0;
+int validSelfMove(int* section, int num){
+	for(int i = 0; i < dim; i++){
+		if(section[i] == num) return 1;
 	}
-	return 1;
+	return 0;
 }
 
 int* genPuzzle(){
@@ -39,19 +34,6 @@ int* genPuzzle(){
 		puzzle[i] = 0;
 	}
 
-	//n*n random spots
-//	for(int i = 1; i <= n*n; i++){
-//		int randPos = rand() % totalSize;
-//		int x = getX(randPos);
-//		int y = getY(randPos);
-//
-//		while(!validMove(puzzle, x, y, i)){
-//			x = getX(randPos);
-//               	y = getY(randPos);
-//			randPos = rand() % totalSize;
-//		}
-//		puzzle[randPos] = i;
-//	}
 	return puzzle;
 }
 
@@ -86,9 +68,10 @@ int main(int argc, char* argv){
 	dim = n*n;
 	//total number of elements in puzzle dim*dim
 	totalSize = dim*dim;
+	int* puzzle = (int*)malloc(totalSize*sizeof(int));
+
 
 	if(rank == 0){
-		int* puzzle = (int*)malloc(totalSize*sizeof(int));
 		puzzle = genPuzzle();
 
 		printPuzzle(puzzle);
@@ -104,11 +87,11 @@ int main(int argc, char* argv){
 					//puzzle pos = xoffset to current position + position in smaller section + yoffset to current position
 					int puzzlePos = xoff + (i*dim + j) + yoff;
 					s[n*i+j] = puzzle[puzzlePos];
-					printf("%d ", s[n*i+j]);
+					//printf("%d ", s[n*i+j]);
 				}
-				printf("\n");
+				//printf("\n");
 			}
-			printf("\n");
+			//printf("\n");
 			//send section to rank x
 			MPI_Send(s, dim, MPI_INT, r, 0, MPI_COMM_WORLD);
 			//rank 0 no longer needs this section
@@ -134,6 +117,19 @@ int main(int argc, char* argv){
 	}*/
 	//now start solving each qn
 
+
+	//setup row/col comm
+	MPI_Comm row_comm;
+	int row_proc=rank/n;
+
+	MPI_Comm_split(MPI_COMM_WORLD, row_proc, rank, &row_comm );
+
+
+	MPI_Comm col_comm;
+	int col_proc=rank%n;
+
+	MPI_Comm_split(MPI_COMM_WORLD, col_proc, rank, &col_comm );
+
 	// for 0 -> n*n - 1
 		// for each rank: r
 			//rank r then places a number into first available spot
@@ -143,5 +139,60 @@ int main(int argc, char* argv){
 			//if valid move, go to next rank
 			//if invalid move pick another number
 
+	for(int r = 0; r < numranks; r++){
+		MPI_Barrier(MPI_COMM_WORLD);
+		if(rank == r){
+			//printf("\nrank == %d", r);
+			for(int i = 0; i < dim; i++){
+				//printf("\nsection[i] = %d\n",section[i]);
+				if(section[i] == 0){
+					for(int num = 1; num <= dim; num++){
+						if(validSelfMove(section, num) == 0){     //if valid
+							//printf("%d ", num);
+							section[i] = num;
+							num = n*n*n;
+						}
+					}
+				}
+			}
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	MPI_Send(section, dim, MPI_INT, 0, 0, MPI_COMM_WORLD);
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+
+	if(rank == 0){
+		for(int r = 0; r < numranks; r++){
+		//decode indivdual sections
+		int* s = malloc(dim*sizeof(int));
+			MPI_Recv(s, dim, MPI_INT, r, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			for(int i = 0; i < n; i++){
+				for(int j = 0; j < n; j++){
+					int xoff = (r/n)* n*n*n;
+					int yoff = (r%n)* n;
+					//puzzle pos = xoffset to current position + position in smaller section + yoffset to current position
+					int puzzlePos = xoff + (i*dim + j) + yoff;
+					puzzle[puzzlePos] = s[n*i+j];
+					//printf("%d ", s[n*i+j]);
+				}
+			}
+		}
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+
+	if(rank == 0){
+		printf("\n\n\n\n");
+		printPuzzle(puzzle);
+	}
+
+	free(section);
+	free(puzzle);
 	MPI_Finalize();
 }
