@@ -1,23 +1,23 @@
-CC = mpicc
-LDC = mpicc
-LD_FLAGS = -std=c11 -fopenmp
-FLAGS = -std=c11 -fopenmp
+CC = gcc
+LDC = gcc
+LD_FLAGS = -std=c11 -fopenmp -lm
+FLAGS = -std=c11 -fopenmp -lm
 RM= /bin/rm
 
-CPROGS = sudoku_solver.cx
+CPROGS = sudoku.cx
 
-OBJSC=$(CPROGS:%.cx=%C.o) 
+OBJSC=$(CPROGS:%.cx=%.o) 
 
 #all rule
 all: $(CPROGS)
 
-#$(CPROGS):$(OBJSC)
-#	$(LDC) $(LD_FLAGS) $@ -o $@
-
-sudoku_solver.cx:sudoku_solverC.o
+$(CPROGS):$(OBJSC)
 	$(LDC) $(LD_FLAGS) $< -o $@
 
-%C.o: %.c
+#sudoku_solver.cx:sudoku_solverC.o
+#	$(LDC) $(LD_FLAGS) $< -o $@
+
+%.o: %.c
 	$(CC) $(FLAGS) -c $^ -o $@
 
 
