@@ -17,6 +17,15 @@ int getY(int pos){
 	return pos%dim;
 }
 
+int hasUnassigned(){
+	int ret = 0;
+	#pragma omp parallel for
+	for(int i = 0; i < totalSize; i++){
+		if(puzzle[i] == 0) ret = 1;
+	}
+	return ret;
+}
+
 int * getSecBounds(int x, int y)
 {
 	int * sec = (int*)malloc(4*sizeof(int));
@@ -78,17 +87,19 @@ void genPuzzle(){
 	}
 
 	//n*n random spots
-	for(int i = 1; i <= dim; i++){
+	for(int i = 0; i <= (int)((double)(totalSize) * .35); i++){
 		int randPos = rand() % totalSize;
+		int randNum = rand() % dim;
 		int x = getX(randPos);
 		int y = getY(randPos);
 
-		while(!validMove(x, y, i)){
+		while(puzzle[randPos] !=0 || !validMove(x, y, randNum)){
+			randPos = rand() % totalSize;
 			x = getX(randPos);
                         y = getY(randPos);
-			randPos = rand() % totalSize;
+			randNum = rand() % dim;
 		}
-		puzzle[randPos] = i;
+		puzzle[randPos] = randNum;
 	}
 }
 
@@ -109,6 +120,19 @@ void printPuzzle(){
 
 }
 
+void solvePuzzle(){
+	for(int i = 0; i < totalSize; i++){
+		int num = rand() % dim;
+		for(int noff = 0; noff < dim; noff++){
+			num = ((num + noff) % dim) + 1;
+			if(puzzle[i] == 0 && validMove(getX(i), getY(i), num)){
+				puzzle[i] = num;
+				break;
+			}
+		}
+	}
+}
+
 int main(int argc, char **argv)
 {
 	//size of inner squares n*n
@@ -116,16 +140,41 @@ int main(int argc, char **argv)
 	{
 		n = (int)sqrt(omp_get_num_threads());
 	}*/
-        n=3;
+        n=10;
 	//number of row/col in puzzle
 	dim = n*n;
 	//total number of elements in puzzle dim*dim
 	totalSize = dim*dim;
 
+	int nthreads;
+	double t1;
+	//#pragma omp parallel{
+	nthreads = omp_get_num_threads();
+	t1 = omp_get_wtime();
+	//}
+
 	puzzle = (int*)malloc(totalSize*sizeof(int));
 	genPuzzle();
 
-	printPuzzle();
+	//printPuzzle();
+
+	solvePuzzle();
+
+	printf("\n\n\n");
+	//printPuzzle();
+
+	if(hasUnassigned()){
+		printf("SOLVER FAILED TO FIND SOLUTION\n");
+	}
+
+	double t2;
+	//#pragma omp parallel{
+	t2 = omp_get_wtime();
+	//}
+
+	printf("numthreads: %d\ntime: %.4f\n\n", nthreads, t2-t1);
+
 
 	free(puzzle); 
 }
+

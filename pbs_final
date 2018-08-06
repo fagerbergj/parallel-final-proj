@@ -6,7 +6,10 @@
 #PBS -j oe
 
 
-cd ~/parallel-final-proj
-export OMP_NUM_THREADS=9
-./sudoku.cx
+cd ~/assignments/final
+for i in {1..12}
+do
+	export OMP_NUM_THREADS=$i
+	./sudoku.cx
+done
 exit 0
