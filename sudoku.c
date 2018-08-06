@@ -20,17 +20,19 @@ int getY(int pos){
 int * getSecBounds(int x, int y)
 {
 	int * sec = (int*)malloc(4*sizeof(int));
-	for(int i=dim-1;i>0; i-=n)
+	for(int i=0;i<dim; i+=n)
 	{
-		if(i>=x&&x<i-n)
+		if(i<=x&&x<i+n)
 		{
-			sec[0]=i-n;
-			sec[1]=i;
+                    //printf("X) %d<=%d && %d<%d\n",i,x,x,i+n);
+			sec[0]=i;
+			sec[1]=i+n-1;
 		}
-		if(i>=y&&y<i-n)
+		if(i<=y&&y<i+n)
 		{
-			sec[2]=i-n;
-			sec[3]=i;
+                    //printf("Y) %d<=%d && %d<%d\n",i,y,y,i+n);
+			sec[2]=i;
+			sec[3]=i+n-1;
 		}
 	}
 	return sec;
@@ -39,7 +41,7 @@ int * getSecBounds(int x, int y)
 int validMove(int x, int y, int k)
 {
 	int check = 1;
-	//check row/col
+	//Check Row/Column
 	#pragma omp parallel for
 	for(int i=0;i<dim;i++)
         {
@@ -49,13 +51,19 @@ int validMove(int x, int y, int k)
 	        check=0;
         }
 
-	//check
+	//Check Sections
+        //printf("X= %d, Y= %d\n",x,y);
 	int * sec = getSecBounds(x, y);
+        //for(int i=0;i<4;i++)
+        //    printf("sec[%d] = %d\n",i,sec[i]);
+        //printf("\n");
+
 	#pragma omp parallel for
 	for(int i=sec[0];i<sec[1];i++)
-		for(int j=sec[2];j<sec[4];j++)
+		for(int j=sec[2];j<sec[3];j++)
 			if(i!=x&&j!=y&&puzzle[dim*i+j]==k)
 				check=0;
+        free(sec);
 	return check;
 }
 
