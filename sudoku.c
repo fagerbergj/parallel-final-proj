@@ -140,7 +140,7 @@ int main(int argc, char **argv)
 	{
 		n = (int)sqrt(omp_get_num_threads());
 	}*/
-        n=10;
+        n=15;
 	//number of row/col in puzzle
 	dim = n*n;
 	//total number of elements in puzzle dim*dim
@@ -148,29 +148,33 @@ int main(int argc, char **argv)
 
 	int nthreads;
 	double t1;
-	//#pragma omp parallel{
+
+	#pragma omp parallel
+	{
 	nthreads = omp_get_num_threads();
 	t1 = omp_get_wtime();
-	//}
+	}
 
 	puzzle = (int*)malloc(totalSize*sizeof(int));
 	genPuzzle();
 
+
+	double t2;
+	#pragma omp parallel
+	{
+	t2 = omp_get_wtime();
+	}
 	//printPuzzle();
 
 	solvePuzzle();
 
-	printf("\n\n\n");
+	//printf("\n\n\n");
 	//printPuzzle();
 
 	if(hasUnassigned()){
 		printf("SOLVER FAILED TO FIND SOLUTION\n");
 	}
 
-	double t2;
-	//#pragma omp parallel{
-	t2 = omp_get_wtime();
-	//}
 
 	printf("numthreads: %d\ntime: %.4f\n\n", nthreads, t2-t1);
 
